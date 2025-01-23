@@ -56,20 +56,25 @@ const Todo = () => {
             </div>
             <ul className="todo-list">
                 {todos.map((e, i) => (
-                    <li key={i} className="todo-item">
-                        <span className="todo-text">{e}</span>
+                    <div key={i} className="todo-item-container">
+                        <li className="todo-item">{e}</li>
                         <div className="todo-actions">
-                            <button onClick={() => editTodo(i)} className="edit-button">
+                            <button
+                                onClick={() => editTodo(i)}
+                                className="action-button edit-button"
+                                title="Edit"
+                            >
                                 <MdEdit />
                             </button>
                             <button
                                 onClick={() => deleteTodo(i)}
-                                className="delete-button"
+                                className="action-button delete-button"
+                                title="Delete"
                             >
                                 <MdDelete />
                             </button>
                         </div>
-                    </li>
+                    </div>
                 ))}
             </ul>
             <div className="todo-footer">
