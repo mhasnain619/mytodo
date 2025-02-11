@@ -5,12 +5,6 @@
     box-sizing: border-box;
 }
 
-/* body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
-} */
-
 /* Todo App Container */
 .todo-container {
     max-width: 500px;
