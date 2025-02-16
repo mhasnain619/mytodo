@@ -1,25 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { MdDelete, MdEdit } from "react-icons/md";
 import "./Todo.css";
-import { collection, addDoc, doc, getDoc, getDocs, deleteDoc } from "firebase/firestore";
-
+import { collection, addDoc, doc, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
 import db from "../FirebaseConfig";
 
 const Todo = () => {
-    const [refresh, setRefresh] = useState(false)
+    const [refresh, setRefresh] = useState(false);
     const [todos, setTodos] = useState({ todoss: '' });
-    const [editIndex, setEditIndex] = useState(null);
-    const [todosFrmDatabase, setTodosFrmDatabase] = useState([])
-
-    const handleAddOrUpdate = async () => {
-        try {
-            const docRef = await addDoc(collection(db, "todos"), todos);
-            setTodos({ todoss: '' })
-            console.log("Document written with ID: ", docRef.id);
-        } catch (e) {
-            console.error("Error adding document: ", e);
-        }
-    };
+    const [editId, setEditId] = useState(null);
+    const [todosFrmDatabase, setTodosFrmDatabase] = useState([]);
 
     useEffect(() => {
         const getTodos = async () => {
@@ -32,24 +21,47 @@ const Todo = () => {
         };
         getTodos();
     }, [refresh]);
-    console.log(todosFrmDatabase);
 
-    const deleteStudent = async (id) => {
+    const handleAddOrUpdate = async () => {
+        try {
+            if (editId) {
+                const todoRef = doc(db, "todos", editId);
+                await updateDoc(todoRef, { todoss: todos.todoss });
+                setEditId(null);
+            } else {
+                await addDoc(collection(db, "todos"), todos);
+            }
+            setTodos({ todoss: '' });
+            setRefresh(prev => !prev);
+        } catch (e) {
+            console.error("Error adding/updating document: ", e);
+        }
+    };
+
+    const deleteTodo = async (id) => {
         try {
             await deleteDoc(doc(db, "todos", id));
-            setTodosFrmDatabase(prevTodos => prevTodos.filter(todo => todo.id !== id));
-            setRefresh(!refresh)
+            setRefresh(prev => !prev);
         } catch (error) {
             console.error("Error deleting document:", error);
         }
     };
-    const editTodo = (e) => {
-        setAddTodo(todos[e]);
-        setEditIndex(e);
+
+    const editTodo = (id, text) => {
+        setTodos({ todoss: text });
+        setEditId(id);
     };
 
-    const clearTodo = () => {
-        setTodos([]);
+    const clearTodo = async () => {
+        try {
+            const querySnapshot = await getDocs(collection(db, "todos"));
+            querySnapshot.forEach(async (doc) => {
+                await deleteDoc(doc.ref);
+            });
+            setRefresh(prev => !prev);
+        } catch (error) {
+            console.error("Error clearing todos:", error);
+        }
     };
 
     return (
@@ -59,29 +71,29 @@ const Todo = () => {
                 <input
                     value={todos.todoss}
                     placeholder="Enter your task..."
-                    onChange={(e) => setTodos({ ...todos, todoss: e.target.value })}
+                    onChange={(e) => setTodos({ todoss: e.target.value })}
                     type="text"
                     className="todo-input"
                 />
                 <button onClick={handleAddOrUpdate} className="todo-button">
-                    {editIndex !== null ? "Update Task" : "Add Task"}
+                    {editId ? "Update Task" : "Add Task"}
                 </button>
             </div>
 
             <ul className="todo-list">
-                {todosFrmDatabase.map((e, i) => (
-                    <div key={i} className="todo-item-container">
-                        <li className="todo-item">{e.todoss}</li>
+                {todosFrmDatabase.map((todo) => (
+                    <div key={todo.id} className="todo-item-container">
+                        <li className="todo-item">{todo.todoss}</li>
                         <div className="todo-actions">
                             <button
-                                onClick={() => editTodo(i)}
+                                onClick={() => editTodo(todo.id, todo.todoss)}
                                 className="action-button edit-button"
                                 title="Edit"
                             >
                                 <MdEdit />
                             </button>
                             <button
-                                onClick={() => deleteStudent(e.id)}
+                                onClick={() => deleteTodo(todo.id)}
                                 className="action-button delete-button"
                                 title="Delete"
                             >
@@ -93,7 +105,7 @@ const Todo = () => {
             </ul>
 
             <div className="todo-footer">
-                <p className="task-count">Total Tasks: {todos.length}</p>
+                <p className="task-count">Total Tasks: {todosFrmDatabase.length}</p>
                 <button onClick={clearTodo} className="clear-button">
                     Clear All
                 </button>
