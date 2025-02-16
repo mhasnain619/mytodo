@@ -23,6 +23,7 @@ const Todo = () => {
     }, [refresh]);
 
     const handleAddOrUpdate = async () => {
+
         try {
             if (editId) {
                 const todoRef = doc(db, "todos", editId);
